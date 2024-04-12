@@ -32,7 +32,7 @@ module arbiters_unit #(
         .clk_i            ( clk_i              ),
         .rst_in           ( rst_in             ),
       
-        .requests_masks_i ( requests_masks[i]  ),
+        .requests_mask_i ( requests_masks[i]  ),
         .id_o             ( grant_o[i]         ),
 
         .last_i           ( s_last_i           ), 

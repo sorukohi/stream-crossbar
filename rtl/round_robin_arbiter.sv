@@ -98,7 +98,7 @@ module round_robin_arbiter #(
   logic [S_DATA_COUNT-1 : 0] list_of_mask [S_DATA_COUNT-1:0];   
   logic [S_DATA_COUNT-1 : 0] used_mask;
 
-  assign crnt_mask     = requests_mask_i;
+  assign crnt_mask = requests_mask_i;
 
   always_ff @(posedge clk_i) begin
     if (!rst_in) last_mask <= '0;
@@ -106,14 +106,14 @@ module round_robin_arbiter #(
   end
 
   always_ff @(posedge clk_i) begin
-    if      (!rst_in)                             list_of_mask              <= '{S_DATA_COUNT{'0}};
+    if   (!rst_in)                                list_of_mask              <= '{S_DATA_COUNT{'0}};
     else begin
       if (is_last && !is_empty_mask && !is_empty) list_of_mask[ptr_rd_list] <= updated_mask;
       if (is_new_mask)                            list_of_mask[ptr_wr_list] <= new_mask;
     end
   end
   
-  assign used_mask     = list_of_mask[ptr_rd_list];  
+  assign used_mask = list_of_mask[ptr_rd_list];  
   
 // ==============================================================================
 //  LOGIC OF DEFINITION MASK FOR WRITING IN LIST
@@ -134,7 +134,7 @@ module round_robin_arbiter #(
   assign updated_mask = crnt_master_of_updated_mask ^ crnt_mask ^ masters_in_line;
   
 // ==============================================================================
-//  TO DEFINE NUMBER OF MASTER
+//  TO DEFINE MASTER NUMBER
 // ==============================================================================
 
   logic [S_DATA_COUNT-1 : 0] crnt_master_of_updated_mask;
@@ -146,7 +146,7 @@ module round_robin_arbiter #(
 
 
   // always_ff @(posedge clk_i) begin
-  //   if      (!rst_in)                             crnt_master_of_crnt_mask             <= '0;
+  //   if      (!rst_in)                             crnt_master_of_crnt_mask <= '0;
   //   else begin
   //     if (is_last && !is_empty_mask && !is_empty) crnt_master_of_crnt_mask <= crnt_master_of_updated_mask;
   //     if (is_new_mask)                            crnt_master_of_crnt_mask <= crnt_master_of_new_mask;
