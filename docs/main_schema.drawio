@@ -1,9 +1,12 @@
-<mxfile host="app.diagrams.net" modified="2024-04-12T11:21:55.758Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36" etag="89JyGwJlRRzApjDRJCm0" version="24.2.3" type="device">
+<mxfile host="app.diagrams.net" modified="2024-04-12T22:52:25.481Z" agent="Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:124.0) Gecko/20100101 Firefox/124.0" etag="fiNqSOrCYvINKXDYiku9" version="24.2.5" type="device">
   <diagram name="Страница — 1" id="rQVnGLrDSZbbLWNePQ8s">
-    <mxGraphModel dx="872" dy="456" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+    <mxGraphModel dx="1123" dy="663" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
+        <mxCell id="0bBXe0FcO8LklLZEBbCD-1" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="360" y="200" width="480" height="480" as="geometry" />
+        </mxCell>
         <mxCell id="frL2Qst_a9hW7aamkYg2-2" value="clk" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.64;exitDx=0;exitDy=0;exitPerimeter=0;startArrow=block;startFill=1;endArrow=none;endFill=0;" parent="1" source="frL2Qst_a9hW7aamkYg2-1" edge="1">
           <mxGeometry x="0.0017" y="-2" relative="1" as="geometry">
             <mxPoint x="390" y="342" as="targetPoint" />
