@@ -75,16 +75,6 @@ module round_robin_arbiter #(
   output logic                    ready_o
 );
 
-// =============================
-//  DECLARATIONS
-// =============================
-
-  logic [S_DATA_COUNT-1 : 0] last_mask;
-  logic [S_DATA_COUNT-1 : 0] crnt_mask;
-  logic [S_DATA_COUNT-1 : 0] used_mask;
-  
-  logic [S_DATA_COUNT-1 : 0] list_of_mask [S_DATA_COUNT-1:0];   
-
 // ==============================================================================
 //  FLAGS
 // ==============================================================================
@@ -102,6 +92,11 @@ module round_robin_arbiter #(
 // ==============================================================================
 //  MAIN RESIGTERS
 // ==============================================================================
+  
+  logic [S_DATA_COUNT-1 : 0] crnt_mask;
+  logic [S_DATA_COUNT-1 : 0] last_mask;
+  logic [S_DATA_COUNT-1 : 0] list_of_mask [S_DATA_COUNT-1:0];   
+  logic [S_DATA_COUNT-1 : 0] used_mask;
 
   assign crnt_mask     = requests_mask_i;
 
