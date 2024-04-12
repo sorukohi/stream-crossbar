@@ -101,7 +101,7 @@ module round_robin_arbiter #(
   assign crnt_mask = requests_mask_i;
 
   always_ff @(posedge clk_i) begin
-    if (!rst_in) last_mask <= '0;
+    if (!rst_in) last_mask <= '0; 
     else         last_mask <= crnt_mask;
   end
 
