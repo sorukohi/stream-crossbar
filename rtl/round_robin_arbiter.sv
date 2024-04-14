@@ -83,7 +83,7 @@ module round_robin_arbiter #(
   logic is_new_mask;   // coming new valid from some master.
   logic is_empty_mask; // current cell of array (used_mask) is empty. shift ptr_rd_list is needed.
   logic is_last;       // coming last signal from current working master.
-  logic is_was_last    // was last in prev tact
+  logic is_was_last;   // was last in prev tact
   
   assign is_empty      = (ptr_wr_list == ptr_rd_list);
   assign is_new_mask   = (crnt_mask != last_mask);
