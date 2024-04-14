@@ -8,9 +8,6 @@
   arbiters unit. Each cell of grant signal say
   which master (value of cell) will be connect to
   slave (number of cell).
-
-  Besides using grant cells in other logic,
-  is being checked its values when set valid signal. 
 */
 
 module data_communication_net #(
@@ -79,7 +76,7 @@ module data_communication_net #(
     if (!rst_in)                valid_ff <= 'd0;
     else begin
       for (int i = 0; i < M_DATA_COUNT; i++) begin
-        if (arbiter_ready_i[i]) valid_ff[i] = (s_dest_i[grant_i[i]] == i) && s_valid_i[grant_i[i]];
+        if (arbiter_ready_i[i]) valid_ff[i] = s_valid_i[grant_i[i]];
       end
     end
   end
@@ -104,7 +101,7 @@ module data_communication_net #(
   always_ff @(posedge clk_i) begin
     if   (!rst_in)            ready_ff             <= 'd0;
     else for (int i = 0; i < M_DATA_COUNT; i++) begin
-      if (arbiter_ready_i[i]) ready_ff[grant_i[i]] <= m_last_o[i] && m_ready_i[i];
+      if (arbiter_ready_i[i]) ready_ff[grant_i[i]] <= s_last_i[grant_i[i]] && m_ready_i[i];
     end 
   end
 
