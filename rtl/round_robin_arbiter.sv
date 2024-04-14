@@ -18,7 +18,7 @@
     Using for example the 5 masters: cell of masks list = [4:0]
     There is list of masks. Size of mask is S_DATA_COUNT - amount of masters.
     Amount of cells in list will be also 5 because even if all masters set request at different times
-    and thus wiil keep valid in logic one will be busy only as many cells as there are masters in total.
+    and thus will keep valid signal in logic one will be busy only as many cells as there are masters in total.
 
   Example of important:
   --------------------------------------------------------------------------------------------------
@@ -28,7 +28,7 @@
   |      |                     |         |     0 0 0 0 0 |             |             |             |
   |      |                     |         |     0 0 0 0 0 |             |             |             |
   |      |                     |         |     0 0 0 0 0 |             |             |             |
-  |      |                     |         |     0 1 1 0 0 |             |             |             |
+  |      |                     |         |     0 0 0 0 0 |             |             |             |
   --------------------------------------------------------------------------------------------------
   |    2 |           0 1 1 1 1 |       1 |     0 0 0 0 0 |           0 |           0 |           1 |
   |      |                     |         |     0 0 0 0 0 |             |             |             |
@@ -48,7 +48,7 @@
   |      |                     |         |     0 0 0 1 0 |             |             |             |
   |      |                     |         |     0 1 0 0 0 |             |             |             |
   --------------------------------------------------------------------------------------------------
-  |    5 |           1 1 1 1 1 |       0 |     0 0 0 0 0 |           3 |          0  |           3 |
+  |    5 |           1 1 0 1 1 |       0 |     0 0 0 0 0 |           3 |          0  |           3 |
   |      |                     |         |     0 0 0 0 0 |             |             |             |
   |      |                     |         |     1 0 0 0 1 |             |             |             |
   |      |                     |         |     0 0 0 1 0 |             |             |             |
@@ -79,16 +79,22 @@ module round_robin_arbiter #(
 //  FLAGS
 // ==============================================================================
 
+  logic is_empty;      // array is empty. nobody in queue.
   logic is_new_mask;   // coming new valid from some master.
   logic is_empty_mask; // current cell of array (used_mask) is empty. shift ptr_rd_list is needed.
   logic is_last;       // coming last signal from current working master.
-  logic is_empty;      // array is empty. nobody in queue.
-
+  logic is_was_last    // was last in prev tact
+  
+  assign is_empty      = (ptr_wr_list == ptr_rd_list);
   assign is_new_mask   = (crnt_mask != last_mask);
   assign is_empty_mask = ~|used_mask && !is_empty;
   assign is_last       = last_i[id_o];
-  assign is_empty      = (ptr_wr_list == ptr_rd_list);
 
+  always_ff @(posedge clk_i) begin
+    if (!rst_in) is_was_last <= '0;
+    else         is_was_last <= is_last;
+  end
+  
 // ==============================================================================
 //  MAIN RESIGTERS
 // ==============================================================================
@@ -108,21 +114,23 @@ module round_robin_arbiter #(
   always_ff @(posedge clk_i) begin
     if   (!rst_in)                                list_of_mask              <= '{S_DATA_COUNT{'0}};
     else begin
-      if (is_last && !is_empty_mask && !is_empty) list_of_mask[ptr_rd_list] <= updated_mask;
-      if (is_new_mask)                            list_of_mask[ptr_wr_list] <= new_mask;
+      if (is_was_last && !is_empty_mask && !is_empty) list_of_mask[ptr_rd_list]     <= updated_mask;
+      else                                        list_of_mask[ptr_rd_list + 1] <= next_mask;
+      if (is_new_mask)                            list_of_mask[ptr_wr_list]     <= new_mask;
     end
   end
   
-  assign used_mask = list_of_mask[ptr_rd_list];  
+  assign used_mask = list_of_mask[ptr_rd_list];
   
 // ==============================================================================
 //  LOGIC OF DEFINITION MASK FOR WRITING IN LIST
 // ==============================================================================
 
   logic [S_DATA_COUNT-1 : 0] masters_in_line;
-  logic [S_DATA_COUNT-1 : 0] new_mask;
   logic [S_DATA_COUNT-1 : 0] updated_mask;
- 
+  logic [S_DATA_COUNT-1 : 0] next_mask;
+  logic [S_DATA_COUNT-1 : 0] new_mask;
+  
   always_comb begin
     for (int i = 0; i < S_DATA_COUNT; i++) begin
       masters_in_line[i] = |list_of_mask[i];
@@ -130,50 +138,29 @@ module round_robin_arbiter #(
   end
 
   // new mask for writing in list
-  assign new_mask     = crnt_master_of_new_mask     ^ crnt_mask ^ masters_in_line;
-  assign updated_mask = crnt_master_of_updated_mask ^ crnt_mask ^ masters_in_line;
+  assign updated_mask = lead_master_of_used_mask ^ crnt_mask ^ masters_in_line;
+  assign next_mask    = lead_master_of_next_mask ^ crnt_mask ^ masters_in_line;
+  assign new_mask     = lead_master_of_new_mask  ^ crnt_mask ^ masters_in_line;
   
 // ==============================================================================
-//  TO DEFINE MASTER NUMBER
+//  TO DEFINE BIT-MASK OF MASTER NUMBER
 // ==============================================================================
 
-  logic [S_DATA_COUNT-1 : 0] crnt_master_of_updated_mask;
-  logic [S_DATA_COUNT-1 : 0] crnt_master_of_new_mask;
-  // logic [S_DATA_COUNT-1 : 0] crnt_master_of_crnt_mask;
+  logic [S_DATA_COUNT-1 : 0] lead_master_of_used_mask;
+  logic [S_DATA_COUNT-1 : 0] lead_master_of_next_mask;
+  logic [S_DATA_COUNT-1 : 0] lead_master_of_new_mask;
 
-  assign crnt_master_of_updated_mask = (1 << used_mask_low_bit);
-  assign crnt_master_of_new_mask     = (1 << crnt_mask_low_bit);
-
-
-  // always_ff @(posedge clk_i) begin
-  //   if      (!rst_in)                             crnt_master_of_crnt_mask <= '0;
-  //   else begin
-  //     if (is_last && !is_empty_mask && !is_empty) crnt_master_of_crnt_mask <= crnt_master_of_updated_mask;
-  //     if (is_new_mask)                            crnt_master_of_crnt_mask <= crnt_master_of_new_mask;
-  //   end
-  // end
+  assign lead_master_of_used_mask = (1 << used_mask_low_bit);
+  assign lead_master_of_next_mask = (1 << next_used_mask_low_bit);
+  assign lead_master_of_new_mask  = (1 << crnt_mask_low_bit);
 
 // ==============================================================================
-//  TO DETECT CURRENT MASTER
-//    Combination logic to detect leading master in definite moment 
-//    among masters simultaneously set request to communicate with given slave.
-//    It is priority selection in definite moment 
-//    because detection are being occruring from low to high bit.       
+//  TO DETECT NUMBER OF PRIORITY MASTER IN SOME MASK     
 // ==============================================================================
-
-  logic [T_ID___WIDTH-1 : 0] next_used_mask_low_bit;
+  
   logic [T_ID___WIDTH-1 : 0] used_mask_low_bit;
+  logic [T_ID___WIDTH-1 : 0] next_used_mask_low_bit;
   logic [T_ID___WIDTH-1 : 0] crnt_mask_low_bit;
-
-// Mainly used if used_mask in array is empty is empty and necessary switch to next cell 
-  always_comb begin
-    for (int i = $low(list_of_mask); i <= $high(list_of_mask); i++) begin
-      if (list_of_mask[ptr_rd_list + 1]) begin
-        next_used_mask_low_bit = i;  
-        break;
-      end
-    end
-  end
 
 // Mainly used to switch to next master inside used_mask, cell of array
   always_comb begin
@@ -184,6 +171,16 @@ module round_robin_arbiter #(
       end
     end
   end   
+
+// Mainly used if used_mask in array is empty is empty and necessary switch to next cell 
+  always_comb begin
+    for (int i = $low(list_of_mask, 1); i <= $high(list_of_mask, 1); i++) begin
+      if (list_of_mask[ptr_rd_list + 1]) begin
+        next_used_mask_low_bit = i;  
+        break;
+      end
+    end
+  end
 
 // Mainly used if array is empty or are being writing new cell 
   always_comb begin
@@ -206,9 +203,9 @@ module round_robin_arbiter #(
                                           // In fact ptr_rd_mask is used in couple with ptr_rd_list thereby choose necessary master.
  
   always_ff @(posedge clk_i) begin
-    if      (!rst_in)                                                                      ptr_rd_list <= 'd0;
-    else if (is_new_mask && is_empty_mask && is_last) if (ptr_rd_list < S_DATA_COUNT - 1)  ptr_rd_list <= ptr_rd_list + 'd1;
-                                                      else                                 ptr_rd_list <= 'd0;
+    if      (!rst_in)                                                           ptr_rd_list <= 'd0;
+    else if (is_empty_mask && is_was_last) if (ptr_rd_list < S_DATA_COUNT - 1)  ptr_rd_list <= ptr_rd_list + 'd1;
+                                           else                                 ptr_rd_list <= 'd0;
   end
 
   always_ff @(posedge clk_i) begin
@@ -218,10 +215,10 @@ module round_robin_arbiter #(
   end
  
   always_ff @(posedge clk_i) begin
-    if      (!rst_in)                     ptr_rd_mask <= 'd0;
-    else if (is_last) if (!is_empty_mask) ptr_rd_mask <= used_mask_low_bit;
-                      else                ptr_rd_mask <= next_used_mask_low_bit;
-    else if (is_empty)                    ptr_rd_mask <= crnt_mask_low_bit;
+    if      (!rst_in)                         ptr_rd_mask <= 'd0;
+    else if (is_was_last) if (!is_empty_mask) ptr_rd_mask <= used_mask_low_bit;
+                          else                ptr_rd_mask <= next_used_mask_low_bit;
+    else if (is_empty)                        ptr_rd_mask <= crnt_mask_low_bit;
   end
 
 // ==============================================================================
