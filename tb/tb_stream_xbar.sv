@@ -7,7 +7,7 @@ module tb_stream_xbar;
 //===========================
 
   localparam T_DATA_WIDTH = 8;
-  localparam S_DATA_COUNT = 2;
+  localparam S_DATA_COUNT = 3;
   localparam M_DATA_COUNT = 3;
   localparam T_ID___WIDTH = $clog2(S_DATA_COUNT);
   localparam T_DEST_WIDTH = $clog2(M_DATA_COUNT);
@@ -48,21 +48,14 @@ module tb_stream_xbar;
     .m_ready_i ( m_ready )
   );
 
-  // function void init_input_arrays(input int S_DATA_COUNT);
-  //   for (int i = 0; i < S_DATA_COUNT; i++) begin
-  //     s_data[i] <= $urandom();
-  //     s_dest[i] <= $urandom();
-  //   end
-  // endfunction   
-
 // ==========================
 //  LOCAL STRUCTS AND PARAMS
 //===========================
 
   localparam CLK_PERIOD         =      2;
-  // localparam AMOUNT_TEST_VALUES =     10;
   localparam TIMEOUT_CYCLES     = 100000;
 
+  // localparam AMOUNT_TEST_VALUES =     10;
   // typedef struct {
   //     rand int          delay;
   //     rand logic [31:0] data;
@@ -82,42 +75,70 @@ module tb_stream_xbar;
 
   initial begin
     reset_system();
-    s_data[0] <= $urandom();
-    s_data[1] <= $urandom();
-
+    
+    @(posedge clk);
+    set_data(1);
     s_dest[0] <= 2;
     s_dest[1] <= 2;
+    s_dest[2] <= 0;
 
+    skip_time();
+    
     s_valid[0] <= 1;
     s_valid[1] <= 1;
+    s_valid[2] <= 1;
 
-    repeat(5) @(posedge clk); 
+    set_data();
 
-    @(posedge clk);
-    m_ready <= 3'b100;
-
-    for (int i = 0; i < 5; i++) begin
-      @(posedge clk);
-      s_data[0] <= $urandom();
-      s_data[1] <= $urandom();
-    end
-
+    m_ready <= 3'b111;
+    set_data();
     s_last[DUT.grant[2]] <= 1; // Last is set by leading master
-
-    wait(m_ready[2]);
-    @(posedge clk);
-
-    repeat(5) @(posedge clk); 
-    for (int i = 0; i < 5; i++) begin
-      @(posedge clk);
-      s_data[0] <= $urandom();
-      s_data[1] <= $urandom();
-    end
-
-    s_last[DUT.grant[2]] <= 1;
+    s_last[DUT.grant[1]] <= 1; 
+    s_last[DUT.grant[0]] <= 1;
+    set_data();
+    s_dest[2] <= 2;
+    set_data(1);
 
   end
 
+// ==========================
+//  TASKS AND OTHER FOR JOB
+//===========================
+
+  initial begin
+    clk <= 0;
+    forever #(CLK_PERIOD / 2) clk <= ~clk;
+  end
+
+  task reset_system;
+      rst_n     <= 0;
+      s_data    <= '{S_DATA_COUNT{'0}};
+      s_dest    <= '{S_DATA_COUNT{'0}};
+      s_valid   <= '0;
+      s_last    <= '0;
+      s_ready   <= '0;  
+      m_ready   <= '0;
+      #CLK_PERIOD;
+      rst_n <= 1;
+  endtask
+
+  task timeout;
+    repeat(TIMEOUT_CYCLES) @(posedge clk);
+    $stop();
+  endtask
+
+  task set_data(int times = 5);
+    repeat (times) begin
+      @(posedge clk);
+      for (int i = 0; i < S_DATA_COUNT; i++) begin
+        s_data[i] <= $urandom();
+      end
+    end
+  endtask
+
+  task skip_time(int times = 5);
+    repeat(times) @(posedge clk);
+  endtask
 
 //   // Master
 //   task gen_master(
@@ -244,58 +265,7 @@ module tb_stream_xbar;
 //             timeout      (timeout_cycles);
 //         join
 //     endtask
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  // initial begin
-  //   reset_system();
-  //   fork
-  //     initIn();
-  //     catchOut();
-  //     checkData();
-  //   join
-  // end
-  
-// ==========================
-//  TASKS AND OTHER FOR JOB
-//===========================
-
-  initial begin
-    clk <= 0;
-    forever #(CLK_PERIOD / 2) clk <= ~clk;
-  end
-
-  task reset_system;
-    begin
-      rst_n     <= 0;
-      s_data    <= '{S_DATA_COUNT{'0}};
-      s_dest    <= '{S_DATA_COUNT{'0}};
-      s_valid   <= '0;
-      s_last    <= '0;
-      s_ready   <= '0;  
-      m_ready   <= '0;
-      #CLK_PERIOD;
-      rst_n <= 1;
-    end
-  endtask
-
-  task timeout;
-    repeat(TIMEOUT_CYCLES) @(posedge clk);
-    $stop();
-  endtask
-
+// 
 //  task initIn;
 //    begin
 //      packet p;
