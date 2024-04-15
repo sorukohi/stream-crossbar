@@ -11,6 +11,8 @@
   directly connect masters and slaves. 
 */
 
+`timescale 1ns / 1ps
+
 module stream_xbar #(
   parameter  T_DATA_WIDTH = 8,
              S_DATA_COUNT = 2,
