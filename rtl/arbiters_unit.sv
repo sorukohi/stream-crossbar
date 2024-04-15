@@ -1,3 +1,5 @@
+`timescale 1ns / 1ps
+
 module arbiters_unit #(
   parameter  T_DATA_WIDTH = 8,
              S_DATA_COUNT = 2,
@@ -32,7 +34,7 @@ module arbiters_unit #(
         .clk_i            ( clk_i              ),
         .rst_in           ( rst_in             ),
       
-        .requests_mask_i ( requests_masks[i]  ),
+        .requests_mask_i  ( requests_masks[i]  ),
         .id_o             ( grant_o[i]         ),
 
         .last_i           ( s_last_i           ), 
@@ -48,7 +50,7 @@ module arbiters_unit #(
   always_comb begin
     for (int i = 0; i < M_DATA_COUNT; i++) begin
       for (int j = 0; j < S_DATA_COUNT; j++) begin
-        if ((s_dest_i[j] == i) && s_valid_i[j]) requests_masks[i][j] = 1'b1;
+        requests_masks[i][j] = (s_dest_i[j] == i) && s_valid_i[j];
       end
     end
   end
