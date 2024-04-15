@@ -8,7 +8,17 @@
   arbiters unit. Each cell of grant signal say
   which master (value of cell) will be connect to
   slave (number of cell).
+
+  Besides using grant cells in other logic,
+  is being checked its values when set valid signal.
+  It's needed because grant signal on non-working
+  slave-devices has X state. To avoid undesirable
+  setting valid to 1 and passing corresponding master data
+  was added condition. It check that master whose id was set on X slave
+  indeed want to communicate with him: s_dest_i(grant_i[i]) == i 
 */
+
+`timescale 1ns / 1ps
 
 module data_communication_net #(
   parameter  T_DATA_WIDTH = 8,
@@ -42,9 +52,9 @@ module data_communication_net #(
   logic [M_DATA_COUNT-1:0] last_ff;
   logic [S_DATA_COUNT-1:0] ready_ff;
 
-// ===================================================
+// ===============
 //  ID
-// ===================================================
+// ===============
 
   always @(posedge clk_i) begin
     if   (!rst_in)              id_ff <= '{M_DATA_COUNT{'d0}};
@@ -55,9 +65,9 @@ module data_communication_net #(
     end 
   end
 
-// ===================================================
+// ===============
 //  DATA
-// ===================================================
+// ===============
 
   always @(posedge clk_i) begin
     if (!rst_in)                  data_ff <= '{M_DATA_COUNT{'d0}};
@@ -68,22 +78,22 @@ module data_communication_net #(
     end
   end
 
-// ===================================================
+// ===============
 //  VALID
-// =================================================== 
+// ===============
 
   always @(posedge clk_i) begin
     if (!rst_in)                valid_ff <= 'd0;
     else begin
       for (int i = 0; i < M_DATA_COUNT; i++) begin
-        if (arbiter_ready_i[i]) valid_ff[i] = s_valid_i[grant_i[i]];
+        if (arbiter_ready_i[i]) valid_ff[i] = (s_dest_i[grant_i[i]] == i) && s_valid_i[grant_i[i]];
       end
     end
   end
 
-// ===================================================
+// ===============
 //  LAST
-// =================================================== 
+// ===============
 
   always_ff @(posedge clk_i) begin
     if (!rst_in)                last_ff <= 'd0;
@@ -94,9 +104,9 @@ module data_communication_net #(
     end
   end
 
-// ===================================================
+// ===============
 //  READY
-// ===================================================    
+// ===============   
 
   always_ff @(posedge clk_i) begin
     if   (!rst_in)            ready_ff             <= 'd0;
@@ -105,9 +115,9 @@ module data_communication_net #(
     end 
   end
 
-// ===================================================
+// ===============
 // OUTPUT SIGNALS
-// ===================================================
+// ===============
 
   assign m_id_o    = id_ff;
   assign m_data_o  = data_ff;
