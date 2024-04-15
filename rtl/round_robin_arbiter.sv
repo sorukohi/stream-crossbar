@@ -60,6 +60,8 @@
     It is necessary for detecting is_empty_mask flag to shift ptr_rd_list on time.  
 */
 
+`timescale 1ns / 1ps
+
 module round_robin_arbiter #(
   parameter  S_DATA_COUNT = 2,
              M_DATA_COUNT = 3,
@@ -75,9 +77,9 @@ module round_robin_arbiter #(
   output logic                    ready_o
 );
 
-// ==============================================================================
+// ==================================================
 //  FLAGS
-// ==============================================================================
+// ==================================================
 
   logic is_empty;      // array is empty. nobody in queue.
   logic is_new_mask;   // coming new valid from some master.
@@ -86,18 +88,20 @@ module round_robin_arbiter #(
   logic is_was_last;   // was last in prev tact
   
   assign is_empty      = (ptr_wr_list == ptr_rd_list);
-  assign is_new_mask   = (crnt_mask != last_mask);
-  assign is_empty_mask = ~|used_mask && !is_empty;
+  // assign is_new_mask   = (crnt_mask != last_mask);
+  assign lead_master_of_ptr_rd_mask = !is_empty && ('d1 << ptr_rd_mask);
+  assign is_new_mask = crnt_mask != masters_in_line ^ lead_master_of_ptr_rd_mask;
+  assign is_empty_mask = ~|used_mask;
   assign is_last       = last_i[id_o];
 
   always_ff @(posedge clk_i) begin
     if (!rst_in) is_was_last <= '0;
     else         is_was_last <= is_last;
   end
-  
-// ==============================================================================
+
+// ==================================================
 //  MAIN RESIGTERS
-// ==============================================================================
+// ==================================================
   
   logic [S_DATA_COUNT-1 : 0] crnt_mask;
   logic [S_DATA_COUNT-1 : 0] last_mask;
@@ -108,23 +112,24 @@ module round_robin_arbiter #(
 
   always_ff @(posedge clk_i) begin
     if (!rst_in) last_mask <= '0; 
+    // else         last_mask <= crnt_mask | masters_in_line ^ ptr_rd_mask;
     else         last_mask <= crnt_mask;
   end
 
   always_ff @(posedge clk_i) begin
-    if   (!rst_in)                                list_of_mask              <= '{S_DATA_COUNT{'0}};
+    if   (!rst_in)                                      list_of_mask                  <= '{S_DATA_COUNT{'0}};
     else begin
-      if (is_was_last && !is_empty_mask && !is_empty) list_of_mask[ptr_rd_list]     <= updated_mask;
-      else                                        list_of_mask[ptr_rd_list + 1] <= next_mask;
-      if (is_new_mask)                            list_of_mask[ptr_wr_list]     <= new_mask;
+      if (is_was_last && !is_empty) if (!is_empty_mask) list_of_mask[ptr_rd_list]     <= updated_mask;
+                                    else                list_of_mask[ptr_rd_list + 1] <= next_mask;
+      if (is_new_mask || is_end_but_not_over)           list_of_mask[ptr_wr_list]     <= new_mask;
     end
   end
   
   assign used_mask = list_of_mask[ptr_rd_list];
   
-// ==============================================================================
+// ==================================================
 //  LOGIC OF DEFINITION MASK FOR WRITING IN LIST
-// ==============================================================================
+// ==================================================
 
   logic [S_DATA_COUNT-1 : 0] masters_in_line;
   logic [S_DATA_COUNT-1 : 0] updated_mask;
@@ -142,21 +147,21 @@ module round_robin_arbiter #(
   assign next_mask    = lead_master_of_next_mask ^ crnt_mask ^ masters_in_line;
   assign new_mask     = lead_master_of_new_mask  ^ crnt_mask ^ masters_in_line;
   
-// ==============================================================================
+// ==================================================
 //  TO DEFINE BIT-MASK OF MASTER NUMBER
-// ==============================================================================
+// ==================================================
 
   logic [S_DATA_COUNT-1 : 0] lead_master_of_used_mask;
   logic [S_DATA_COUNT-1 : 0] lead_master_of_next_mask;
   logic [S_DATA_COUNT-1 : 0] lead_master_of_new_mask;
 
-  assign lead_master_of_used_mask = (1 << used_mask_low_bit);
-  assign lead_master_of_next_mask = (1 << next_used_mask_low_bit);
-  assign lead_master_of_new_mask  = (1 << crnt_mask_low_bit);
+  assign lead_master_of_used_mask = 'd1 << used_mask_low_bit      & |used_mask;
+  assign lead_master_of_next_mask = 'd1 << next_used_mask_low_bit & |list_of_mask[ptr_rd_list + 1];
+  assign lead_master_of_new_mask  = 'd1 << crnt_mask_low_bit      & |crnt_mask;
 
-// ==============================================================================
+// ==================================================
 //  TO DETECT NUMBER OF PRIORITY MASTER IN SOME MASK     
-// ==============================================================================
+// ==================================================
   
   logic [T_ID___WIDTH-1 : 0] used_mask_low_bit;
   logic [T_ID___WIDTH-1 : 0] next_used_mask_low_bit;
@@ -164,6 +169,7 @@ module round_robin_arbiter #(
 
 // Mainly used to switch to next master inside used_mask, cell of array
   always_comb begin
+    used_mask_low_bit = '0;
     for (int i = $low(used_mask); i <= $high(used_mask); i++) begin
       if (used_mask[i]) begin
         used_mask_low_bit = i;  
@@ -174,6 +180,7 @@ module round_robin_arbiter #(
 
 // Mainly used if used_mask in array is empty is empty and necessary switch to next cell 
   always_comb begin
+    next_used_mask_low_bit = '0;
     for (int i = $low(list_of_mask, 1); i <= $high(list_of_mask, 1); i++) begin
       if (list_of_mask[ptr_rd_list + 1]) begin
         next_used_mask_low_bit = i;  
@@ -184,6 +191,7 @@ module round_robin_arbiter #(
 
 // Mainly used if array is empty or are being writing new cell 
   always_comb begin
+    crnt_mask_low_bit = '0;
     for (int i = $low(crnt_mask); i <= $high(crnt_mask); i++) begin
       if (crnt_mask[i]) begin
         crnt_mask_low_bit = i; 
@@ -192,9 +200,9 @@ module round_robin_arbiter #(
     end
   end   
 
-// ==============================================================================
+// ==================================================
 //  MASKS ARRAY POINTERS
-// ==============================================================================
+// ==================================================
 
   logic [T_ID___WIDTH-1 : 0] ptr_wr_list; // ptr_wr_list is indicating on row of requests array that will be overwritten
   logic [T_ID___WIDTH-1 : 0] ptr_rd_list; // ptr_rd_list is indicating on row of requests array that is being read
@@ -203,27 +211,48 @@ module round_robin_arbiter #(
                                           // In fact ptr_rd_mask is used in couple with ptr_rd_list thereby choose necessary master.
  
   always_ff @(posedge clk_i) begin
-    if      (!rst_in)                                                           ptr_rd_list <= 'd0;
-    else if (is_empty_mask && is_was_last) if (ptr_rd_list < S_DATA_COUNT - 1)  ptr_rd_list <= ptr_rd_list + 'd1;
-                                           else                                 ptr_rd_list <= 'd0;
+    if      (!rst_in)                                                                    ptr_rd_list <= 'd0;
+    else if (is_empty_mask && !is_empty && is_last) if (ptr_rd_list < S_DATA_COUNT - 1)  ptr_rd_list <= ptr_rd_list + 'd1;
+                                                    else                                 ptr_rd_list <= 'd0;
   end
 
+  logic is_end_but_not_over;
+  assign is_end_but_not_over = is_last && is_empty_mask && is_almost_empty && |crnt_mask;
+
   always_ff @(posedge clk_i) begin
-    if      (!rst_in)                                         ptr_wr_list <= 'd0;
-    else if (is_new_mask) if (ptr_wr_list < S_DATA_COUNT - 1) ptr_wr_list <= ptr_wr_list + 'd1;
-                          else                                ptr_wr_list <= 'd0;
-  end
- 
-  always_ff @(posedge clk_i) begin
-    if      (!rst_in)                         ptr_rd_mask <= 'd0;
-    else if (is_was_last) if (!is_empty_mask) ptr_rd_mask <= used_mask_low_bit;
-                          else                ptr_rd_mask <= next_used_mask_low_bit;
-    else if (is_empty)                        ptr_rd_mask <= crnt_mask_low_bit;
+    if      (!rst_in)                                                                ptr_wr_list <= 'd0;
+    else if (is_new_mask || is_end_but_not_over) if (ptr_wr_list < S_DATA_COUNT - 1) ptr_wr_list <= ptr_wr_list + 'd1;
+                                                 else                                ptr_wr_list <= 'd0;
   end
 
-// ==============================================================================
+  // always_comb begin
+  //                                         ptr_rd_mask = 'd0;
+  //   if      (is_last) if (!is_empty_mask) ptr_rd_mask = used_mask_low_bit;
+  //                     else                ptr_rd_mask = next_used_mask_low_bit;
+  //   else if (is_empty)                    ptr_rd_mask = crnt_mask_low_bit;
+  // end
+
+  // always_ff @(posedge clk_i) begin
+  //   if      (!rst_in)                                      ptr_rd_mask <= 'd0;
+  //   else if (!is_empty && is_was_last) if (!is_empty_mask) ptr_rd_mask <= used_mask_low_bit;
+  //                                      else                ptr_rd_mask <= next_used_mask_low_bit;
+  //   else                                                   ptr_rd_mask <= crnt_mask_low_bit; 
+  // end
+  
+  logic  is_almost_empty;
+  assign is_almost_empty = (ptr_rd_list == ptr_wr_list - 'd1); 
+
+  always_ff @(posedge clk_i) begin
+    if      (!rst_in)                                ptr_rd_mask <= 'd0;
+    else if (is_last) if      (!is_empty_mask)       ptr_rd_mask <= used_mask_low_bit;
+                      else if (!is_end_but_not_over) ptr_rd_mask <= next_used_mask_low_bit;
+                           else                      ptr_rd_mask <= crnt_mask_low_bit;
+    else if (is_empty)                               ptr_rd_mask <= crnt_mask_low_bit;
+  end
+
+// ==================================================
 //  OUTPUT SIGNALS
-// ==============================================================================
+// ==================================================
 
   assign ready_o = !is_empty;
   assign id_o    = ptr_rd_mask;
