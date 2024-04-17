@@ -57,10 +57,10 @@ module data_communication_net #(
 // ===============
 
   always @(posedge clk_i) begin
-    if   (!rst_in)              id_ff <= '{M_DATA_COUNT{'d0}};
+    if   (!rst_in)              id_ff    <= '{M_DATA_COUNT{'d0}};
     else begin
       for (int i = 0; i < M_DATA_COUNT; i++) begin
-        if (arbiter_ready_i[i]) id_ff[i] = grant_i[i];
+        if (arbiter_ready_i[i]) id_ff[i] <= grant_i[i];
       end
     end 
   end
@@ -70,10 +70,10 @@ module data_communication_net #(
 // ===============
 
   always @(posedge clk_i) begin
-    if (!rst_in)                  data_ff <= '{M_DATA_COUNT{'d0}};
+    if (!rst_in)                  data_ff    <= '{M_DATA_COUNT{'d0}};
     else begin
       for (int i = 0; i < M_DATA_COUNT; i++) begin
-          if (arbiter_ready_i[i]) data_ff[i] = s_data_i[grant_i[i]];
+          if (arbiter_ready_i[i]) data_ff[i] <= s_data_i[grant_i[i]];
       end
     end
   end
@@ -83,10 +83,10 @@ module data_communication_net #(
 // ===============
 
   always @(posedge clk_i) begin
-    if (!rst_in)                valid_ff <= 'd0;
+    if (!rst_in)                valid_ff    <= 'd0;
     else begin
       for (int i = 0; i < M_DATA_COUNT; i++) begin
-        if (arbiter_ready_i[i]) valid_ff[i] = (s_dest_i[grant_i[i]] == i) && s_valid_i[grant_i[i]];
+        if (arbiter_ready_i[i]) valid_ff[i] <= (s_dest_i[grant_i[i]] == i) && s_valid_i[grant_i[i]];
       end
     end
   end
@@ -96,10 +96,10 @@ module data_communication_net #(
 // ===============
 
   always_ff @(posedge clk_i) begin
-    if (!rst_in)                last_ff <= 'd0;
+    if (!rst_in)                last_ff    <= 'd0;
     else begin
       for (int i = 0; i < M_DATA_COUNT; i++) begin
-        if (arbiter_ready_i[i]) last_ff[i] = s_last_i[grant_i[i]];
+        if (arbiter_ready_i[i]) last_ff[i] <= s_last_i[grant_i[i]];
       end
     end
   end
@@ -118,6 +118,18 @@ module data_communication_net #(
 // ===============
 // OUTPUT SIGNALS
 // ===============
+
+  // generate
+  // endgenerate 
+  // always_comb begin
+  //   for (int i = 0; i < M_DATA_COUNT; i++) begin
+  //     m_id_o[i]             = grant_i[i];
+  //     m_data_o[i]           = s_data_i[grant_i[i]];
+  //     m_valid_o[i]          = (s_dest_i[grant_i[i]] == i) && s_valid_i[grant_i[i]];
+  //     m_last_o[i]           = s_last_i[grant_i[i]];
+  //     s_ready_o[grant_i[i]] = s_last_i[grant_i[i]] && m_ready_i[i];
+  //   end 
+  // end
 
   assign m_id_o    = id_ff;
   assign m_data_o  = data_ff;
