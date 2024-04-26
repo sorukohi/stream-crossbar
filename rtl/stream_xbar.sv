@@ -37,18 +37,18 @@ module stream_xbar #(
 );
 
   logic [T_ID___WIDTH-1 : 0] grant [M_DATA_COUNT-1 : 0];
-
+  
   arbiters_unit #(
-      .T_DATA_WIDTH ( T_DATA_WIDTH ),
-      .S_DATA_COUNT ( S_DATA_COUNT ),
-      .M_DATA_COUNT ( M_DATA_COUNT )
+    .T_DATA_WIDTH ( T_DATA_WIDTH ),
+    .S_DATA_COUNT ( S_DATA_COUNT ),
+    .M_DATA_COUNT ( M_DATA_COUNT )
   ) arbtrs_unit_init (
-      .clk_i           ( clk           ),
-      .rst_in          ( rst_n         ),
+    .clk_i           ( clk           ),
+    .rst_in          ( rst_n         ),
 
-      .s_dest_i        ( s_dest_i      ),
-      .s_last_i        ( s_last_i      ),
-      .s_valid_i       ( s_valid_i     ),
+    .s_dest_i        ( s_dest_i      ),
+    .s_last_i        ( s_last_i      ),
+    .s_valid_i       ( s_valid_i     ),
 
     .grant_o         ( grant         )
   );

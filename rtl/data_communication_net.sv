@@ -24,7 +24,7 @@ module data_communication_net #(
   parameter  T_DATA_WIDTH = 8,
              S_DATA_COUNT = 2,
              M_DATA_COUNT = 3,
-  localparam T_ID___WIDTH = $clog2(S_DATA_COUNT),
+  localparam T_ID___WIDTH = $clog2(S_DATA_COUNT), 
              T_DEST_WIDTH = $clog2(M_DATA_COUNT)
 ) (
 // multiple input streams
@@ -49,7 +49,7 @@ module data_communication_net #(
       m_data_o [s_idx]  = s_data_i[grant_i[s_idx]];
       m_valid_o[s_idx]  = (s_dest_i[grant_i[s_idx]] == s_idx) && s_valid_i[grant_i[s_idx]];
       m_last_o [s_idx]  = s_last_i[grant_i[s_idx]];
-      end
+    end 
     for (int m_idx = 0; m_idx < S_DATA_COUNT; m_idx++) begin
       s_ready_o[m_idx] = m_valid_o[s_dest_i[m_idx]] && m_ready_i[s_dest_i[m_idx]];
     end 
