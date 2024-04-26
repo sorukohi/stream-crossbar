@@ -14,7 +14,8 @@ module arbiters_unit #(
   input  logic [S_DATA_COUNT-1 : 0] s_last_i,
   input  logic [S_DATA_COUNT-1 : 0] s_valid_i,
 
-  output logic [T_ID___WIDTH-1 : 0] grant_o          [M_DATA_COUNT-1 : 0],
+  output logic [T_ID___WIDTH-1 : 0] grant_o          [M_DATA_COUNT-1 : 0]
+);
 
   logic [S_DATA_COUNT-1 : 0] requests_masks  [M_DATA_COUNT-1 : 0];
 
