@@ -4,7 +4,7 @@ module arbiters_unit #(
   parameter  T_DATA_WIDTH = 8,
              S_DATA_COUNT = 2,
              M_DATA_COUNT = 3,
-  localparam T_ID___WIDTH = $clog2(S_DATA_COUNT),
+             T_ID___WIDTH = $clog2(S_DATA_COUNT),
              T_DEST_WIDTH = $clog2(M_DATA_COUNT)
 ) (
   input  logic                      clk_i,
@@ -28,7 +28,8 @@ module arbiters_unit #(
     for (genvar i = 0; i < M_DATA_COUNT; i++) begin
       round_robin_arbiter #(
         .S_DATA_COUNT ( S_DATA_COUNT ),
-        .M_DATA_COUNT ( M_DATA_COUNT )
+        .M_DATA_COUNT ( M_DATA_COUNT ),
+        .T_ID___WIDTH ( T_ID___WIDTH )
       ) rr_arbtr_inst (
         .clk_i            ( clk_i              ),
         .rst_in           ( rst_in             ),

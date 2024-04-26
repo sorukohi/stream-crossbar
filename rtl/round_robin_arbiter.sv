@@ -61,7 +61,7 @@
 module round_robin_arbiter #(
   parameter  S_DATA_COUNT = 2,
              M_DATA_COUNT = 3,
-  localparam T_ID___WIDTH = $clog2(S_DATA_COUNT)
+             T_ID___WIDTH = $clog2(S_DATA_COUNT)
 ) (
   input  logic                    clk_i,
   input  logic                    rst_in,

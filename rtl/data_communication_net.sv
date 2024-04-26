@@ -24,7 +24,7 @@ module data_communication_net #(
   parameter  T_DATA_WIDTH = 8,
              S_DATA_COUNT = 2,
              M_DATA_COUNT = 3,
-  localparam T_ID___WIDTH = $clog2(S_DATA_COUNT), 
+             T_ID___WIDTH = $clog2(S_DATA_COUNT), 
              T_DEST_WIDTH = $clog2(M_DATA_COUNT)
 ) (
 // multiple input streams
