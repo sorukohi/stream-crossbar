@@ -186,7 +186,7 @@ module tb_stream_xbar_3x4;
 
   // ----------- SET №5 ------------
     $display("Time: %t | SET №5", $time());
-    $display("Time: %t | Test of instant master standing in line after job", $time());
+    $display("Time: %t | Test of 2 master ending. Leaves the queue", $time());
     $display("Time: %t |", $time());
     @(posedge clk);
     handshake_mask();
