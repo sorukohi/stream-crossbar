@@ -37,7 +37,6 @@ module stream_xbar #(
 );
 
   logic [T_ID___WIDTH-1 : 0] grant [M_DATA_COUNT-1 : 0];
-  logic [M_DATA_COUNT-1 : 0] arbiter_ready;
 
   arbiters_unit #(
       .T_DATA_WIDTH ( T_DATA_WIDTH ),
@@ -51,8 +50,7 @@ module stream_xbar #(
       .s_last_i        ( s_last_i      ),
       .s_valid_i       ( s_valid_i     ),
 
-      .grant_o         ( grant         ),
-      .arbiter_ready_o ( arbiter_ready )
+    .grant_o         ( grant         )
   );
 
   data_communication_net #(
@@ -60,9 +58,6 @@ module stream_xbar #(
     .S_DATA_COUNT ( S_DATA_COUNT ),
     .M_DATA_COUNT ( M_DATA_COUNT )
   ) comm_net_init (
-    .clk_i           ( clk           ),
-    .rst_in          ( rst_n         ),
-
     .s_data_i        ( s_data_i      ),
     .s_dest_i        ( s_dest_i      ),
     .s_last_i        ( s_last_i      ),
@@ -75,8 +70,7 @@ module stream_xbar #(
     .m_valid_o       ( m_valid_o     ),
     .m_ready_i       ( m_ready_i     ),
 
-    .grant_i         ( grant         ),
-    .arbiter_ready_i ( arbiter_ready )
+    .grant_i         ( grant         )
   );
 
 endmodule
